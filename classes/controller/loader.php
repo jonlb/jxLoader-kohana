@@ -1,5 +1,6 @@
 <?php
 
+<<<<<<< HEAD
 class Controller_Loader extends Controller_Site {
 
 
@@ -12,6 +13,35 @@ class Controller_Loader extends Controller_Site {
         $config = Kohana::config('loader');
 
         
+=======
+/**
+ * This controller doesn't need any acl checking so it will inherit from Kohana's
+ * base Controller class.
+ *
+ *
+ */
+class Controller_Loader extends Controller {
+
+
+
+    public function before(){
+        //start session so that we can save what files have been sent to
+       //the client already this session.
+       $this->session = Session::instance();
+    }
+
+    /**
+     * This function will do the heavy lifting of the controller...
+     */
+    public function action_index(){
+       $path = Kohana::find_file('vendors',)
+
+//get config information
+require_once 'config.php';
+require_once 'helpers/functions.php';
+
+$cclass = $cconfig['cacheClass'];
+>>>>>>> origin/master
 require_once 'helpers/'.$cclass.'.php';
 $cache = new $cclass($cconfig);
 
@@ -163,6 +193,7 @@ if ($mode == 'DEV') {
     echo $source;
 }
 
+<<<<<<< HEAD
 
 //TODO: need to figure out how to get ie-specific css files.
     }
@@ -190,5 +221,7 @@ if ($mode == 'DEV') {
         $g = str_replace('}','',$g);
         $g = str_replace('-','',$g);
         return $g;
+=======
+>>>>>>> origin/master
     }
 }

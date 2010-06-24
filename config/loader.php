@@ -1,5 +1,6 @@
 <?php
 
+<<<<<<< HEAD
 //loader config goes in here
 return array(
     'repoBasePath' => '',
@@ -31,3 +32,8 @@ return array(
         )
     )
 );
+=======
+/**
+ * This will be the configuration file for the module (in Kohana style)
+ */
+>>>>>>> origin/master
