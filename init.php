@@ -1,16 +1,9 @@
 <?php
 
-
-<<<<<<< HEAD
-//add routes here
-
-Route::add('loader','loader', null, 'admin')
-=======
 /**
  * Define the route(s) we need in this file
  */
-Route::add('loader','loader/', null, 'admin')
->>>>>>> origin/master
+Route::add('loader','loader', null, 'admin')
     ->defaults(array(
         'controller' => 'loader',
         'action' => 'index'

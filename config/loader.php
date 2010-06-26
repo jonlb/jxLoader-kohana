@@ -1,9 +1,8 @@
 <?php
 
-<<<<<<< HEAD
 //loader config goes in here
 return array(
-    'repoBasePath' => '',
+    'repoBasePath' => '../../media/',
     'moveImagesRelativeToLoader' => false,
     'imagePath' => '/media/image/',
     'rewriteImageUrl' => true,
@@ -32,8 +31,4 @@ return array(
         )
     )
 );
-=======
-/**
- * This will be the configuration file for the module (in Kohana style)
- */
->>>>>>> origin/master
+

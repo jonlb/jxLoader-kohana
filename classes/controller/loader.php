@@ -1,201 +1,198 @@
 <?php
 
-<<<<<<< HEAD
 class Controller_Loader extends Controller_Site {
 
+    private $config;
+    private $session;
 
     public function before(){
         $this->session = Session::instance();
+        $this->config = Kohana::config('loader');
+
+        //search all activated modules for media and normalize in the
+        //config array
+        foreach (Jx_Modules::get_all() as $mod => $arr) {
+            if ($arr['activated'] && !$arr['permanent']) {
+                $basePath = MODPATH.$mod.DS.'media'.DS.$mod.DS;
+                $create = false;
+                if (is_dir($basePath.'js')) {
+                    $jsPath = $basePath.'js'.DS;
+                    $create = true;
+                }
+                if (is_dir($basePath.'css')) {
+                    $cssPath = $basePath.'css'.DS;
+                    $create = true;
+                }
+                if (is_dir($basePath.'images')) {
+                    $imgPath = $basePath.'images'.DS;
+                    $imgUrl = '../images/';
+                    $create = true;
+                }
+                if ($create) {
+                    $this->config['repos'][$mod] = array(
+                        'imageUrl' => $imgUrl,
+                        'paths' => array(
+                            'js' => $jsPath,
+                            'css' => $cssPath,
+                            'images' => $imgPath
+                        )
+                    );
+                }
+            }
+        }
+
     }
 
     public function action_index() {
 
-        $config = Kohana::config('loader');
+        $config = $this->config;
+        $path = Kohana::find_file('vendors', 'loader/loader.class');
 
-        
-=======
-/**
- * This controller doesn't need any acl checking so it will inherit from Kohana's
- * base Controller class.
- *
- *
- */
-class Controller_Loader extends Controller {
-
-
-
-    public function before(){
-        //start session so that we can save what files have been sent to
-       //the client already this session.
-       $this->session = Session::instance();
-    }
-
-    /**
-     * This function will do the heavy lifting of the controller...
-     */
-    public function action_index(){
-       $path = Kohana::find_file('vendors',)
-
-//get config information
-require_once 'config.php';
-require_once 'helpers/functions.php';
-
-$cclass = $cconfig['cacheClass'];
->>>>>>> origin/master
-require_once 'helpers/'.$cclass.'.php';
-$cache = new $cclass($cconfig);
-
-if (!isset($_SESSION['included'])) {
-    $_SESSION['included'] = array();
-}
-
-//get variables
-$mode = strtoupper(get_by_key('mode','PROD'));
-$files = get_by_key('file',array());
-$repos = get_by_key('repo', array());
-$type = strtolower(get_by_key('type','js'));
-$compress = (bool)get_by_key('compress',true);
-$algorithm = get_by_key('alg','jsmin');
-$depsOnly = (bool)get_by_key('depsOnly',false);
-$rebuild = (bool)get_by_key('rebuild',false);
-$opts = (bool)get_by_key('opts',false);
-//$clearCache = (bool)get_by_key('clearCache',false);
-$theme = get_by_key('theme','');
-$allDeps = (bool)get_by_key('allDeps', false);
-$clearSession = (bool)get_by_key('clearSession', false);
-$page = get_by_key('page','');
-$key = get_by_key('key','');
-
-$isLoader = false;
-
-if (empty($page)) {
-    //generate a GUID
-    $page = guid();
-}
-
-if (count($files) == 1 && strtolower($files[0]) == 'loader') {
-    $mode = 'PROD';
-    $isLoader = true;
-}
-
-if ($mode == 'DEV') {
-    //load the main loader class
-    require_once 'loader.class.php';
-
-    $loader = new Loader($lconfig);
-
-    if ($rebuild) {
-        $loader->rebuild();
-    }
-
-    //unset session
-    if ($clearSession && isset($_SESSION['included'][$page])) {
-        unset($_SESSION['included'][$page]);
-    }
-    //get exclude list...
-    $exclude = isset($_SESSION['included'][$page]) ? $_SESSION['included'][$page] : array();
-
-
-    //in development mode
-    if ($depsOnly) {
-        $deps = $loader->compile_deps($files, $repos, 'jsdeps', $opts, $exclude);
-        //setup deps properly
-        $d = array();
-        $flat = $loader->get_flat_array();
-        foreach ($deps as $dep) {
-            $css = !empty($flat[$dep]['css']) && count($flat[$dep]['css']) > 0;
-            $d[] = $dep.':'.$css;
+        if ($path === FALSE) {
+            throw new Kohana_Exception('Unable to find the loader class.');
         }
-        //send back as json... this would have been called to get deps by loader.js
-        $data = new stdClass();
-        $data->deps = $d;
-        $data->key = $key;
-        header('Content-type:application/json');
-        echo json_encode($data);
-    } else {
-        //var_dump($exclude);
-        $ret = $loader->compile($files, $repos, $type, false, $theme, $exclude, $opts);
-        //var_dump($ret);
-        if ($ret) {
+        require_once $path;
+
+        //get variables
+        $mode = strtoupper($this->request->get_param('mode','PROD'));
+        $files = $this->request->get_param('file',array());
+        $repos = $this->request->get_param('repo', array());
+        $type = strtolower($this->request->get_param('type','js'));
+        $compress = (bool)$this->request->get_param('compress',true);
+        $algorithm = $this->request->get_param('alg','jsmin');
+        $depsOnly = (bool)$this->request->get_param('depsOnly',false);
+        $rebuild = (bool)$this->request->get_param('rebuild',false);
+        $opts = (bool)$this->request->get_param('opts',false);
+        //$clearCache = (bool)$this->request->param('clearCache',false);
+        $theme = $this->request->get_param('theme','');
+        $allDeps = (bool)$this->request->get_param('allDeps', false);
+        $clearSession = (bool)$this->request->get_param('clearSession', false);
+        $page = $this->request->get_param('page','');
+        $key = $this->request->get_param('key','');
+
+        $isLoader = false;
+
+        if (empty($page)) {
+            //generate a GUID
+            $page = $this->guid();
+        }
+
+        $included = $this->session->get('included');
+        if (is_null($included)) {
+            $included = array(
+                $page => array(
+                    'css' => array(),
+                    'js' => array()
+                )
+            );
+        }
+
+        if (count($files) == 1 && strtolower($files[0]) == 'loader') {
+            $mode = 'PROD';
+            $isLoader = true;
+        }
+
+        $loader = new Loader($config);
+
+        if ($rebuild) {
+            $loader->rebuild();
+        }
+
+        //unset session
+        if ($clearSession && isset($included[$page])) {
+            $included[$page]['css'] = array();
+            $included[$page]['js'] = array();
+        }
+
+        if ($mode == 'DEV') {
+
+            //get exclude list...
+            $exclude = isset($included[$page][$type]) ? $included[$page][$type] : array();
+
+            //in development mode
+            if ($depsOnly) {
+                $deps = $loader->compile_deps($files, $repos, 'jsdeps', $opts, $exclude);
+                //setup deps properly
+                $d = array();
+                $flat = $loader->get_flat_array();
+                foreach ($deps as $dep) {
+                    $css = !empty($flat[$dep]['css']) && count($flat[$dep]['css']) > 0;
+                    $d[] = $dep.':'.$css;
+                }
+                //send back as json... this would have been called to get deps by loader.js
+                $data = new stdClass();
+                $data->deps = $d;
+                $data->key = $key;
+                header('Content-type:application/json');
+                echo json_encode($data);
+                exit();
+            } else {
+                $ret = $loader->compile($files, $repos, $type, false, $theme, $exclude, $opts);
+                if ($ret) {
+                    $source = $ret['source'];
+                    $incl = array_merge($exclude,$ret['included']);
+                    $included[$page][$type] = $incl;
+                    $this->session->set('included',$included);
+                    //send back with no compression...
+                    if ($type == 'js') { $type = 'javascript';}
+                    header('Content-type:text/'.$type);
+                    echo $source;
+                    exit();
+                }
+            }
+        } else {
+            //in production mode
+
+            //get exclude list...
+            $exclude;
+            if (!$allDeps) {
+                $exclude = isset($included[$page][$type]) ? $included[$page][$type] : array();
+            } else {
+                $exclude = array();
+            }
+            $ret = $loader->compile($files, $repos, $type, true, $theme, $exclude, $opts);
             $source = $ret['source'];
-            $included = array_merge($exclude,$ret['included']);
-            $_SESSION['included'][$page] = $included;
-            //send back with no compression...
+            if (is_null($ret['included'])) {
+                $ret['included'] = array();
+            }
+            $included[$page][$type] = array_merge($exclude,$ret['included']);
+            $this->session->set('included',$included);
+
+            if (empty($source)) {
+                $source = "/* No source to return */";
+            } else if ($isLoader) {
+                $source = str_replace('%page%', $page, $source);
+            }
+            if ($compress) {
+                if ($type == 'js') {
+                    switch ($algorithm){
+                        case 'jsmin':
+                            $path = Kohana::find_file('vendors','loader/includes/jsmin-1.1.1');
+                            require_once $path;
+                            $source = JSMin::minify($source);
+                            break;
+                        case 'packer':
+                            $path = Kohana::find_file('vendors','loader/includes/class.JavaScriptPacker');
+                            require_once $path;
+                            $packer = new JavaScriptPacker($source, $encoding, $fast_decode, $special_char);
+                            $source = $packer->pack();
+                            break;
+                    }
+                } else {
+                    $path = Kohana::find_file('vendors','loader/includes/minify_css');
+                    require_once $path;
+                    $source = Minify_CSS_Compressor::process($source);
+                }
+
+            }
+
+            //send the file
             if ($type == 'js') { $type = 'javascript';}
             header('Content-type:text/'.$type);
             echo $source;
-        }
-    }
-} else {
-    //in production mode
-    //echo "<br>In production code...";
-
-    //load the main loader class
-    require_once 'loader.class.php';
-
-    $loader = new Loader($lconfig);
-    //echo "<br>load class...";
-    if ($rebuild) {
-        $loader->rebuild();
-        //echo "<br>rebuild class...";
-    }
-
-
-    //unset session
-    if ($clearSession && isset($_SESSION['included'][$page])) {
-        unset($_SESSION['included'][$page]);
-    }
-    //get exclude list...
-    $exclude;
-    if (!$allDeps) {
-        $exclude = isset($_SESSION['included'][$page]) ? $_SESSION['included'][$page] : array();
-    } else {
-        $exclude = array();
-    }
-    //echo "<br>exclude = <pre>";var_dump($exclude); echo "</pre>";
-    $ret = $loader->compile($files, $repos, $type, true, $theme, $exclude, $opts);
-    $source = $ret['source'];
-    //echo "<br>included = <pre>";var_dump($ret['included']); echo "</pre>";
-    if (is_null($ret['included'])) {
-        $ret['included'] = array();
-    }
-    $_SESSION['included'][$page] = array_merge($exclude,$ret['included']);
-
-    if (empty($source)) {
-        $source = "/* No source to return */";
-    } else if ($isLoader) {
-        $source = str_replace('%page%', $page, $source);
-    }
-    if ($compress) {
-        //echo "<br>Compressing....";
-        if ($type == 'js') {
-            switch ($algorithm){
-                case 'jsmin':
-                    require_once 'helpers/jsmin-1.1.1.php';
-                    $source = JSMin::minify($source);
-                    break;
-                case 'packer':
-                    require_once 'helpers/class.JavaScriptPacker.php';
-                    $packer = new JavaScriptPacker($source, $encoding, $fast_decode, $special_char);
-                    $source = $packer->pack();
-                    break;
-            }
-        } else {
-             require_once 'helpers/minify_css.php';
-             $source = Minify_CSS_Compressor::process($source);
+            exit();
         }
 
-    }
-
-    //send the file
-    if ($type == 'js') { $type = 'javascript';}
-    header('Content-type:text/'.$type);
-    echo $source;
-}
-
-<<<<<<< HEAD
-
-//TODO: need to figure out how to get ie-specific css files.
     }
 
 
@@ -221,7 +218,5 @@ if ($mode == 'DEV') {
         $g = str_replace('}','',$g);
         $g = str_replace('-','',$g);
         return $g;
-=======
->>>>>>> origin/master
     }
 }
