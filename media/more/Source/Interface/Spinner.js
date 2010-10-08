@@ -131,6 +131,7 @@ var Spinner = new Class({
 
 Spinner.implement(new Chain);
 
+/*
 if (window.Request) {
 	Request = Class.refactor(Request, {
 		
@@ -163,6 +164,7 @@ if (window.Request) {
 		
 	});
 }
+*/
 
 Element.Properties.spinner = {
 

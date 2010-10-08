@@ -26,7 +26,6 @@ provides: [Jx.Slide]
 Jx.Slide = new Class({
     Family: 'Jx.Slide',
     Implements: Jx.Object,
-    Binds: ['handleClick'],
     options: {
         /**
          * Option: target
@@ -71,7 +70,7 @@ Jx.Slide = new Class({
 
         if ($defined(this.options.trigger)) {
             this.trigger = document.id(this.options.trigger);
-            this.trigger.addEvent('click', this.handleClick);
+            this.trigger.addEvent('click', this.handleClick.bind(this));
         }
 
         this.target.store('slider', this);

@@ -11,10 +11,17 @@ class Controller_Loader extends Controller_Site {
 
         //search all activated modules for media and normalize in the
         //config array
+        //Jx_Debug::dump(Jx_Modules::get_all());
         foreach (Jx_Modules::get_all() as $mod => $arr) {
-            if ($arr['activated'] && !$arr['permanent']) {
-                $basePath = MODPATH.$mod.DS.'media'.DS.$mod.DS;
+            $basePath = MODPATH.$mod.DS.'media'.DS.$mod.DS;
+
+            if ($arr['activated'] && file_exists($basePath)) {
+
                 $create = false;
+                $jsPath = null;
+                $cssPath = null;
+                $imgPath = null;
+                $imgUrl = null;
                 if (is_dir($basePath.'js')) {
                     $jsPath = $basePath.'js'.DS;
                     $create = true;
@@ -23,12 +30,14 @@ class Controller_Loader extends Controller_Site {
                     $cssPath = $basePath.'css'.DS;
                     $create = true;
                 }
+                $img = false;
                 if (is_dir($basePath.'images')) {
                     $imgPath = $basePath.'images'.DS;
                     $imgUrl = '../images/';
                     $create = true;
+                    $img = true;
                 }
-                if ($create) {
+                if ($create && $img) {
                     $this->config['repos'][$mod] = array(
                         'imageUrl' => $imgUrl,
                         'paths' => array(
@@ -37,9 +46,21 @@ class Controller_Loader extends Controller_Site {
                             'images' => $imgPath
                         )
                     );
+                    //Jx_Debug::dump($this->config['repos'][$mod], 'config for '.$mod);
+                } elseif ($create) {
+                     $this->config['repos'][$mod] = array(
+                        'paths' => array(
+                            'js' => $jsPath,
+                            'css' => $cssPath
+                        )
+                    );
+                    //Jx_Debug::dump($this->config['repos'][$mod], 'config for '.$mod);
                 }
             }
+
         }
+
+        //Jx_Debug::dump($this->config);
 
     }
 
