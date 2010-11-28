@@ -1,3 +1,12 @@
 [submodule "vendors/loader"]
 	path = vendors/loader
 	url = git@github.com:jonlb/jxLoader.git
+[submodule "media/more"]
+	path = media/more
+	url = git://github.com/mootools/mootools-more.git
+[submodule "media/core"]
+	path = media/core
+	url = git://github.com/mootools/mootools-core.git
+[submodule "media/jxlib"]
+	path = media/jxlib
+	url = git@github.com:jonlb/JxLib.git
