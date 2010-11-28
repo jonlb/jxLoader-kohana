@@ -24,18 +24,18 @@ return array(
         'jxlib' => array(
             'imageUrl' => 'images/',
             'paths' => array(
-                'js' => 'jxlib/Source',
-                'css' => 'jxlib/themes/{theme}/css',
-                'cssalt' => 'jxlib/themes/{theme}',
-                'images' => 'jxlib/themes/{theme}/images'
+                'js' => 'jxlib/src/Source',
+                'css' => 'jxlib/src/themes/{theme}/css',
+                'cssalt' => 'jxlib/src/themes/{theme}',
+                'images' => 'jxlib/src/themes/{theme}/images'
             )
         ),
-        'jx-extensions' => array(
+        'jxlib-extensions' => array(
             'imageUrl' => 'images/',
             'paths' => array(
-                'js' => 'jx-extensions/Source',
-                'css' => 'jx-extensions/css',
-                'images' => 'jx-extensions/images'
+                'js' => 'jxlib-extensions/trunk/Source',
+                'css' => 'jxlib-extensions/trunk/css',
+                'images' => 'jxlib-extensions/trunk/css/images'
             )
         )
     )
