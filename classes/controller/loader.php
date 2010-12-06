@@ -91,6 +91,7 @@ class Controller_Loader extends Controller_Site {
         $page = $this->request->get_param('page','');
         $key = $this->request->get_param('key','');
 
+        //Jx_Debug::log($type,'Type to load');
         $isLoader = false;
 
         if (empty($page)) {
@@ -98,14 +99,14 @@ class Controller_Loader extends Controller_Site {
             $page = $this->guid();
         }
 
-        $included = $this->session->get('included');
-        if (is_null($included)) {
-            $included = array(
-                $page => array(
-                    'css' => array(),
-                    'js' => array()
-                )
-            );
+        $dbkey = $page.'-'.$type;
+        //Jx_Debug::log($dbkey,'DB Key');
+        $l = Jelly::select('loader')->where('key','=',$dbkey)->limit(1)->execute();
+        //Jx_Debug::log($l,'return from Jelly::select');
+        if ($l->loaded()) {
+            $included = unserialize($l->data);
+        } else {
+            $included = array();
         }
 
         if (count($files) == 1 && strtolower($files[0]) == 'loader') {
@@ -119,16 +120,32 @@ class Controller_Loader extends Controller_Site {
             $loader->rebuild();
         }
 
+        //Jx_Debug::log($clearSession, 'Clear Session?');
+
         //unset session
         if ($clearSession && isset($included[$page])) {
-            $included[$page]['css'] = array();
-            $included[$page]['js'] = array();
+            $included = array();
+            //TODO: clear css and js from database
+            $dbk = $page . '-js';
+            $l = Jelly::select('loader')->where('key','=',$dbk)->limit(1)->execute();
+            if ($l->loaded()) {
+                $l->delete();
+            }
+
+            $dbk = $page . '-css';
+            $l = Jelly::select('loader')->where('key','=',$dbk)->limit(1)->execute();
+            if ($l->loaded()) {
+                $l->delete();
+            }
+
         }
+
+        //Jx_Debug::log($included, 'classes included last time');
 
         if ($mode == 'DEV') {
 
             //get exclude list...
-            $exclude = isset($included[$page][$type]) ? $included[$page][$type] : array();
+            $exclude = $included;
 
             //in development mode
             if ($depsOnly) {
@@ -144,6 +161,7 @@ class Controller_Loader extends Controller_Site {
                 $data = new stdClass();
                 $data->deps = $d;
                 $data->key = $key;
+                //TODO: save included classes
                 header('Content-type:application/json');
                 echo json_encode($data);
                 exit();
@@ -152,8 +170,18 @@ class Controller_Loader extends Controller_Site {
                 if ($ret) {
                     $source = $ret['source'];
                     $incl = array_merge($exclude,$ret['included']);
-                    $included[$page][$type] = $incl;
-                    $this->session->set('included',$included);
+                    //$this->session->set($type.'-included',$included);
+                    if (!$l->loaded()) {
+                        Jelly::factory('loader')
+                            ->set(array(
+                                'key' => $dbkey,
+                                'data' => serialize($incl)
+                        ))->save();
+                    } else {
+                        $l->key = $dbkey;
+                        $l->data = serialize($incl);
+                        $l->save();
+                    }
                     //send back with no compression...
                     if ($type == 'js') { $type = 'javascript';}
                     header('Content-type:text/'.$type);
@@ -167,17 +195,29 @@ class Controller_Loader extends Controller_Site {
             //get exclude list...
             $exclude;
             if (!$allDeps) {
-                $exclude = isset($included[$page][$type]) ? $included[$page][$type] : array();
+                $exclude = $included;
             } else {
                 $exclude = array();
             }
+            //Jx_Debug::log($exclude, 'excluded classes');
             $ret = $loader->compile($files, $repos, $type, true, $theme, $exclude, $opts);
+            //Jx_Debug::log($ret['included'], 'returned from compile');
             $source = $ret['source'];
             if (is_null($ret['included'])) {
                 $ret['included'] = array();
             }
-            $included[$page][$type] = array_merge($exclude,$ret['included']);
-            $this->session->set('included',$included);
+            $included = array_merge($exclude,$ret['included']);
+            //Jx_Debug::log($included, 'saved to exclude next time');
+            if (!$l->loaded()) {
+                Jelly::factory('loader')
+                    ->set(array(
+                        'key' => $dbkey,
+                        'data' => serialize($included)
+                ))->save();
+            } else {
+                $l->data = serialize($included);
+                $l->save();
+            }
 
             if (empty($source)) {
                 $source = "/* No source to return */";
@@ -239,5 +279,9 @@ class Controller_Loader extends Controller_Site {
         $g = str_replace('}','',$g);
         $g = str_replace('-','',$g);
         return $g;
+    }
+
+    private function getKey($page,$type){
+        return $this->session->id().'-'.$page.'-'.$type;
     }
 }
