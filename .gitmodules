@@ -10,3 +10,6 @@
 [submodule "media/jxlib-extensions"]
 	path = media/jxlib-extensions
 	url = git@github.com:jonlb/jxlib-extensions.git
+[submodule "vendors/loader"]
+	path = vendors/loader
+	url = git@github.com:jonlb/jxLoader.git
